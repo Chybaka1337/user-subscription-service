@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16.0
+    container_name: user-subscription-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: user_subscription_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  app:
+    build: .
+    container_name: user-subscription-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/user_subscription_db
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: root
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
